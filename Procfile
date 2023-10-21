@@ -1,1 +1,1 @@
-web: loadenv gunicorn server:app
+web: gunicorn server:app
