@@ -324,6 +324,10 @@ def adduser(name,email):
 
 
 oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI)
+
+@app.route('/')
+def index():
+    return jsonify({"message": "Welcome to Prompt Dash"})
     
 @app.route('/login', methods=['GET'])
 def start_auth():
