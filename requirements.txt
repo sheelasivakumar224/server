@@ -5,4 +5,5 @@ PyJWT
 weaviate
 json
 firebase-admin
+python-dotenv
 gunicorn>=20.1.0
