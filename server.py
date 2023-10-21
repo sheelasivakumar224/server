@@ -26,7 +26,9 @@ TOKEN_URI=os.getenv("TOKEN_URI")
 AUTH_PROVIDER_x509_CERT_URL=os.getenv("AUTH_PROVIDER_x509_CERT_URL")
 CLIENT_x509_CERT_URL=os.getenv("CLIENT_x509_CERT_URL")
 UNIVERSE_DOMAIN=os.getenv("UNIVERSE_DOMAIN")
-
+private_key = f"""-----BEGIN PRIVATE KEY-----
+{PRIVATE_KEY}
+-----END PRIVATE KEY-----"""
 
 '''Firestore'''
 
@@ -34,7 +36,7 @@ cred = credentials.Certificate({
     "type": TYPE,
     "project_id": PROJECT_ID,
     "private_key_id": PRIVATE_KEY_ID,
-    "private_key":PRIVATE_KEY ,
+    "private_key":private_key ,
     "client_email":CLIENT_EMAIL,
     "client_id":CLIENT_ID_FIREBASE,
     "auth_uri":AUTH_URI,
