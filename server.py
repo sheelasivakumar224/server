@@ -23,12 +23,14 @@ CLIENT_EMAIL=os.getenv("CLIENT_EMAIL")
 CLIENT_ID_FIREBASE=os.getenv("CLIENT_ID_FIREBASE")
 AUTH_URI=os.getenv("AUTH_URI")
 TOKEN_URI=os.getenv("TOKEN_URI")
-AUTH_PROVIDER_x509_CERT_URL=os.getenv("AUTH_PROVIDER_x509_CERT_URL")
-CLIENT_x509_CERT_URL=os.getenv("CLIENT_x509_CERT_URL")
+AUTH_CERT_URL=os.getenv("AUTH_CERT_URL")
+CLIENT_CERT_URL=os.getenv("CLIENT_CERT_URL")
 UNIVERSE_DOMAIN=os.getenv("UNIVERSE_DOMAIN")
-private_key = f"""-----BEGIN PRIVATE KEY-----
+private_key = f"""
+-----BEGIN PRIVATE KEY-----
 {PRIVATE_KEY}
------END PRIVATE KEY-----"""
+-----END PRIVATE KEY-----
+"""
 
 '''Firestore'''
 
@@ -36,13 +38,13 @@ cred = credentials.Certificate({
     "type": TYPE,
     "project_id": PROJECT_ID,
     "private_key_id": PRIVATE_KEY_ID,
-    "private_key":private_key ,
+    "private_key":private_key,
     "client_email":CLIENT_EMAIL,
     "client_id":CLIENT_ID_FIREBASE,
     "auth_uri":AUTH_URI,
     "token_uri": TOKEN_URI,
-    "auth_provider_x509_cert_url":AUTH_PROVIDER_x509_CERT_URL ,
-    "client_x509_cert_url": CLIENT_x509_CERT_URL,
+    "auth_provider_x509_cert_url":AUTH_CERT_URL ,
+    "client_x509_cert_url": CLIENT_CERT_URL,
     "universe_domain":UNIVERSE_DOMAIN 
 })
 firebase_app = firebase_admin.initialize_app(cred)
@@ -229,73 +231,90 @@ def getPromptinfo(text):
    
 
 def deleteMyprompt(text):
-     info =  getPromptinfo(text)
-     print(info)  
-     id = info['_additional']["id"]  
-     email = info['email']
-     if id is not None:
-         client.data_object.delete(uuid = id,class_name=CLASS)
-         doc_ref = db.collection("All_Prompt").document(id)
-         doc_ref.update({"deleted":True})
-         pinned_ref = db.collection("Pinned").document(email)
-         pinned_ref.update({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
-         return "Deleted the Prompt and Unpinned the prompt"
-     else:
-         return "Prompt doesnt exist"
+     try:
+        info =  getPromptinfo(text)
+        print(info)  
+        id = info['_additional']["id"]  
+        email = info['email']
+        if id is not None:
+            client.data_object.delete(uuid = id,class_name=CLASS)
+            doc_ref = db.collection("All_Prompt").document(id)
+            doc_ref.update({"deleted":True})
+            pinned_ref = db.collection("Pinned").document(email)
+            pinned_ref.update({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
+            return "Deleted the Prompt and Unpinned the prompt"
+        else:
+            return "Prompt doesnt exist"
+     except Exception as e:
+         errorMsg = "Unable to Delete"
+         return errorMsg,404
 
 
-def updateMyprompt(text,editedText):
-    info = getPromptinfo(text)
-    id = info['_additional']["id"]
-    update_data = {
-        "public" : False,
-        "email" : info["email"],
-        "prompt" : editedText,
-        "title" : info["title"],
-        "category" : info["category"],
-        "isPinned" : info["isPinned"]
-    }  
-    if id is not None:
-         client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
-         doc_ref = db.collection("All_prompt").document(id)
-         doc_ref.update({"prompt":text,"modified_date":firestore.SERVER_TIMESTAMP })
-    else:
-         return "Prompt doesn't exist"
+def updateMyprompt(originalText,editedText,Title,Category):
+    try:
+        info = getPromptinfo(originalText)
+        id = info['_additional']["id"]
+        update_data = {
+            "public" : False,
+            "email" : info["email"],
+            "prompt" : editedText,
+            "title" : Title,
+            "category" : Category,
+            "isPinned" : info["isPinned"]
+        }  
+        if id is not None:
+            client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
+            doc_ref = db.collection("All_prompt").document(id)
+            doc_ref.update({"prompt":originalText,"modified_date":firestore.SERVER_TIMESTAMP })
+        else:
+            return "Prompt doesn't exist"
+    except Exception as e:
+        errorMsg = "Unable to Update Prompt"
+        return errorMsg,404
 
 # Need to check the code logic to pin the prompt
 def pinThePrompt(query,email):
-    info = getPromptinfo(query)
-    id = info['_additional']["id"]
-    update_data = {
-        "public" : False,
-        "email" : info["email"],
-        "prompt" : info["prompt"],
-        "title" : info["title"],
-        "category" : info["category"],
-        "isPinned" : True
-    }  
-    client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
-    doc_ref = db.collection("All_Prompt").document(id)
-    pinned_ref = db.collection("Pinned").document(email)
-    pinned_ref.update({"Pinned_prompt": firestore.ArrayUnion([doc_ref])})
-    return "Inserted into firestore"
+
+    try:
+        info = getPromptinfo(query)
+        id = info['_additional']["id"]
+        update_data = {
+            "public" : False,
+            "email" : info["email"],
+            "prompt" : info["prompt"],
+            "title" : info["title"],
+            "category" : info["category"],
+            "isPinned" : True
+        }  
+        client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
+        doc_ref = db.collection("All_Prompt").document(id)
+        pinned_ref = db.collection("Pinned").document(email)
+        pinned_ref.update({"Pinned_prompt": firestore.ArrayUnion([doc_ref])})
+        return "Inserted into firestore"
+    except Exception as e:
+        errorMesage = "Unable to pin the prompt "
+        return errorMesage,404
 
 def unpinThePrompt(query,email):
-    info = getPromptinfo(query)
-    id = info['_additional']["id"]
-    update_data = {
-        "public" : False,
-        "email" : info["email"],
-        "prompt" : info["prompt"],
-        "title" : info["title"],
-        "category" : info["category"],
-        "isPinned" : False
-    }  
-    client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
-    doc_ref = db.collection("All_Prompt").document(id)
-    pinned_ref = db.collection("Pinned").document(email)
-    pinned_ref.update({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
-    return "Unpinned the prompt"
+    try:
+        info = getPromptinfo(query)
+        id = info['_additional']["id"]
+        update_data = {
+            "public" : False,
+            "email" : info["email"],
+            "prompt" : info["prompt"],
+            "title" : info["title"],
+            "category" : info["category"],
+            "isPinned" : False
+        }  
+        client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
+        doc_ref = db.collection("All_Prompt").document(id)
+        pinned_ref = db.collection("Pinned").document(email)
+        pinned_ref.update({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
+        return "Unpinned the prompt"
+    except Exception as e:
+        errorMesage = "Unable to unpin the prompt "
+        return errorMesage,404
 
 # Need to check the code logic to pin the prompt
 def displayPinned(email):
@@ -339,10 +358,6 @@ def adduser(name,email):
 
 
 oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI)
-
-@app.route('/')
-def index():
-    return jsonify({"message": "Welcome to Prompt Dash"})
     
 @app.route('/login', methods=['GET'])
 def start_auth():
@@ -487,8 +502,10 @@ def update():
             payload = jwt.decode(token,SECRET_KEY,algorithms=['HS256'])
             data = request.get_json()
             originalText = data["originalPrompt"]
-            editedText = data["editedPrompt"]
-            updateMyprompt(originalText,editedText)
+            editedText = data["prompt"]
+            Title = data["title"]
+            Category = data["category"]
+            updateMyprompt(originalText,editedText,Title,Category)
             return jsonify({"msg" : "update works"})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
