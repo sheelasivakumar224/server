@@ -194,7 +194,8 @@ def searchMyPrompt(email,prompt,mode,category):
                             "operator" : "Equal",
                             "valueString" : email
                         }
-                    ]
+                    ],
+                    "operator" : "Or"
                 }
                 query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
                 prompts = query["data"]["Get"][CLASS]
