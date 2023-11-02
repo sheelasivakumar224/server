@@ -182,7 +182,21 @@ def searchMyPrompt(email,prompt,mode,category):
                 return final   
         else:
             if(category == "All"):
-                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.4}).do())
+                where_filter = {
+                    "operands" : [
+                        {
+                            "path" :["email"],
+                            "operator" : "Equal",
+                            "valueString" : "null"
+                        },
+                        {
+                            "path" : ["email"],
+                            "operator" : "Equal",
+                            "valueString" : email
+                        }
+                    ]
+                }
+                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
                 prompts = query["data"]["Get"][CLASS]
                 prompt_texts = [prompt for prompt in prompts]
                 results = []
