@@ -265,7 +265,8 @@ def updateMyprompt(originalText,editedText,Title,Category):
         if id is not None:
             client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
             doc_ref = db.collection("All_prompt").document(id)
-            doc_ref.update({"prompt":originalText,"modified_date":firestore.SERVER_TIMESTAMP })
+            doc_ref.update({"title":Title,"category":Category,"prompt":editedText,"modified_date":firestore.SERVER_TIMESTAMP })
+
         else:
             return "Prompt doesn't exist"
     except Exception as e:
@@ -288,6 +289,7 @@ def pinThePrompt(query,email):
         }  
         client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
         doc_ref = db.collection("All_Prompt").document(id)
+        doc_ref.update({"isPinned" : True})
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.update({"Pinned_prompt": firestore.ArrayUnion([doc_ref])})
         return "Inserted into firestore"
@@ -309,6 +311,7 @@ def unpinThePrompt(query,email):
         }  
         client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
         doc_ref = db.collection("All_Prompt").document(id)
+        doc_ref.update({"isPinned" : False})
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.update({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
         return "Unpinned the prompt"
