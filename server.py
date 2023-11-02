@@ -264,7 +264,7 @@ def updateMyprompt(originalText,editedText,Title,Category):
         }  
         if id is not None:
             client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
-            doc_ref = db.collection("All_prompt").document(id)
+            doc_ref = db.collection("All_Prompt").document(id)
             doc_ref.update({"title":Title,"category":Category,"prompt":editedText,"modified_date":firestore.SERVER_TIMESTAMP })
 
         else:
