@@ -214,9 +214,30 @@ def searchMyPrompt(email,prompt,mode,category):
                 return final   
             else:
                 where_filter = {
-                        "path": ["category"],
-                        "operator" : "Equal",
-                        "valueString" : category
+                    "operands" : [
+                        {
+                            "path": ["category"],
+                            "operator" : "Equal",
+                            "valueString" : category
+                        },
+                        {
+                            "operands" : [
+                                {
+                                    "path" :["email"],
+                                    "operator" : "Equal",
+                                    "valueString" : "null"
+                                },
+                                {
+                                    "path" : ["email"],
+                                    "operator" : "Equal",
+                                    "valueString" : email
+                                }
+                            ],
+                            "operator" : "Or",
+                        }
+                    ],
+                    "operator" : "And"
+                        
                     }
                 query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
                 prompts = query["data"]["Get"][CLASS]
