@@ -93,6 +93,7 @@ def addToClass(email,prompt,title,category):
             }
         }
         uuid = client.data_object.create(properties,class_name=CLASS)
+        print(properties)
         print(uuid)
         doc_ref = db.collection("All_Prompt").document(uuid)
         data = {
@@ -335,12 +336,13 @@ def pinThePrompt(query,email):
         data = client.data_object.get(id)
         current_data  =data["properties"]["isPinned"]["email"]
         current_data.append(email)
-
+        print("Data Updated")
         updated_data = {
             "isPinned" : {
                 "email" : current_data
             }
         }
+        print(updated_data)
         client.data_object.update(uuid = id,data_object = updated_data,class_name=CLASS)
         doc_ref = db.collection("All_Prompt").document(id)
         pinned_ref = db.collection("Pinned").document(email)
@@ -357,7 +359,7 @@ def unpinThePrompt(query,email):
         data = client.data_object.get(id)
         current_data  =data["properties"]["isPinned"]["email"]
 
-        current_data.append(email)
+        current_data.remove(email)
 
         updated_data = {
             "isPinned" : {
