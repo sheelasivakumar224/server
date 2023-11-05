@@ -93,7 +93,6 @@ def addToClass(email,prompt,title,category):
             }
         }
         uuid = client.data_object.create(properties,class_name=CLASS)
-        print(properties)
         print(uuid)
         doc_ref = db.collection("All_Prompt").document(uuid)
         data = {
@@ -278,9 +277,10 @@ def searchMyPrompt(email,prompt,mode,category):
 
 def getPromptinfo(text):
     res = client.query.get(CLASS,['public','email','title','prompt','category','isPinned {email}']).with_additional("id").with_near_text({"concepts" : [text]}).with_limit(1).do()
-    prompts = res["data"]["Get"]["PromptDash2"]
+    prompts = res["data"]["Get"][CLASS]
     prompt_texts = [prompt for prompt in prompts]
     for text in prompt_texts:
+        print(text)
         return text
    
 
@@ -336,18 +336,18 @@ def pinThePrompt(query,email):
         data = client.data_object.get(id)
         current_data  =data["properties"]["isPinned"]["email"]
         current_data.append(email)
-        print("Data Updated")
+
         updated_data = {
             "isPinned" : {
                 "email" : current_data
             }
         }
-        print(updated_data)
         client.data_object.update(uuid = id,data_object = updated_data,class_name=CLASS)
+
         doc_ref = db.collection("All_Prompt").document(id)
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.update({"Pinned_prompt": firestore.ArrayUnion([doc_ref])})
-        return "Inserted into firestore"
+        return "Prompt Pinned"
     except Exception as e:
         errorMesage = "Unable to pin the prompt "
         return errorMesage,404
@@ -359,7 +359,7 @@ def unpinThePrompt(query,email):
         data = client.data_object.get(id)
         current_data  =data["properties"]["isPinned"]["email"]
 
-        current_data.remove(email)
+        current_data.append(email)
 
         updated_data = {
             "isPinned" : {
@@ -565,8 +565,8 @@ def update():
             editedText = data["prompt"]
             Title = data["title"]
             Category = data["category"]
-            updateMyprompt(originalText,editedText,Title,Category)
-            return jsonify({"msg" : "update works"})
+            res = updateMyprompt(originalText,editedText,Title,Category)
+            return jsonify({"msg" : res})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
         except jwt.DecodeError:
@@ -585,8 +585,11 @@ def pinPrompt():
             data = request.get_json()
             prompt = data["query"]
             email = payload["email"]
-            pinThePrompt(prompt,email)
-            return jsonify({"msg" : "pin works"})
+            print(prompt)
+            print(email)
+            res = pinThePrompt(prompt,email)
+            print(res)
+            return jsonify({"msg" : res})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
         except jwt.DecodeError:
@@ -604,8 +607,8 @@ def unpinPrompt():
             data = request.get_json()
             prompt = data["query"]
             email = payload["email"]
-            unpinThePrompt(prompt,email)
-            return jsonify({"msg" : "unpin works"})
+            res = unpinThePrompt(prompt,email)
+            return jsonify({"msg" : res})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
         except jwt.DecodeError:
