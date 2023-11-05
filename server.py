@@ -88,7 +88,9 @@ def addToClass(email,prompt,title,category):
             "title" : title,
             "prompt" : prompt,
             "category" : category,
-            "isPinned" : False
+            "isPinned" : {
+                "email" : []
+            }
         }
         uuid = client.data_object.create(properties,class_name=CLASS)
         print(uuid)
@@ -129,17 +131,21 @@ def searchMyPrompt(email,prompt,mode,category):
                     ],
                     "operator" : "And"
                 }
-                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.8}).with_where(where_filter).do())
-                prompts = query["data"]["Get"]["PromptDash2"]
+                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned {email}']).with_near_text({"concepts": prompt,"accuracy": 0.8}).with_where(where_filter).do())
+                prompts = query["data"]["Get"][CLASS]
                 prompt_texts = [prompt for prompt in prompts]
                 results = []
                 for text in prompt_texts:
+                    pinned = text['isPinned']['email']
+                    isPinned = False
+                    if email in pinned:
+                        isPinned = True
                     prompt_data = {
                             "prompt": text["prompt"],
                             "title": text["title"],
                             "category": text["category"],
                             "public" : text["public"],
-                            "isPinned" : text["isPinned"]
+                            "isPinned" : isPinned
                     }
                     results.append(prompt_data)
                 final = json.dumps(results)
@@ -165,17 +171,21 @@ def searchMyPrompt(email,prompt,mode,category):
                     ],
                     "operator" : "And"
                     }
-                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
-                prompts = query["data"]["Get"]["PromptDash2"]
+                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned {email}']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
+                prompts = query["data"]["Get"][CLASS]
                 prompt_texts = [prompt for prompt in prompts]
                 results = []
                 for text in prompt_texts:
+                        pinned = text['isPinned']['email']
+                        isPinned = False
+                        if email in pinned:
+                            isPinned = True
                         prompt_data = {
                                 "prompt": text["prompt"],
                                 "title": text["title"],
                                 "category": text["category"],
                                 "public" : text["public"],
-                                "isPinned" : text['isPinned']
+                                "isPinned" : isPinned
                         }
                         results.append(prompt_data)
                 final = json.dumps(results)
@@ -197,17 +207,21 @@ def searchMyPrompt(email,prompt,mode,category):
                     ],
                     "operator" : "Or"
                 }
-                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
+                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned {email}']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
                 prompts = query["data"]["Get"][CLASS]
                 prompt_texts = [prompt for prompt in prompts]
                 results = []
                 for text in prompt_texts:
+                    pinned = text['isPinned']['email']
+                    isPinned = False
+                    if email in pinned:
+                        isPinned = True
                     prompt_data = {
                             "prompt": text["prompt"],
                             "title": text["title"],
                             "category": text["category"],
                             "public" : text["public"],
-                            "isPinned" : text["isPinned"]
+                            "isPinned" : isPinned
                     }
                     results.append(prompt_data)
                 final = json.dumps(results)
@@ -233,23 +247,26 @@ def searchMyPrompt(email,prompt,mode,category):
                                     "valueString" : email
                                 }
                             ],
-                            "operator" : "Or",
+                            "operator" : "Or"
                         }
                     ],
                     "operator" : "And"
-                        
                     }
-                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
+                query = (client.query.get(CLASS,['title','prompt','category','public','isPinned {email}']).with_near_text({"concepts": prompt,"accuracy": 0.4}).with_where(where_filter).do())
                 prompts = query["data"]["Get"][CLASS]
                 prompt_texts = [prompt for prompt in prompts]
                 results = []
                 for text in prompt_texts:
+                        pinned = text['isPinned']['email']
+                        isPinned = False
+                        if email in pinned:
+                            isPinned = True
                         prompt_data = {
                                 "prompt": text["prompt"],
                                 "title": text["title"],
                                 "category": text["category"],
                                 "public" : text["public"],
-                                "isPinned" : text["isPinned"]
+                                "isPinned" : isPinned
                         }
                         results.append(prompt_data)
                 final = json.dumps(results)
@@ -259,7 +276,7 @@ def searchMyPrompt(email,prompt,mode,category):
         return error_message, 404      
 
 def getPromptinfo(text):
-    res = client.query.get(CLASS,['public','email','title','prompt','category','isPinned']).with_additional("id").with_near_text({"concepts" : [text]}).with_limit(1).do()
+    res = client.query.get(CLASS,['public','email','title','prompt','category','isPinned {email}']).with_additional("id").with_near_text({"concepts" : [text]}).with_limit(1).do()
     prompts = res["data"]["Get"]["PromptDash2"]
     prompt_texts = [prompt for prompt in prompts]
     for text in prompt_texts:
@@ -300,9 +317,8 @@ def updateMyprompt(originalText,editedText,Title,Category):
         }  
         if id is not None:
             client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
-            doc_ref = db.collection("All_Prompt").document(id)
+            doc_ref = db.collection("All_prompt").document(id)
             doc_ref.update({"title":Title,"category":Category,"prompt":editedText,"modified_date":firestore.SERVER_TIMESTAMP })
-
         else:
             return "Prompt doesn't exist"
     except Exception as e:
@@ -315,17 +331,18 @@ def pinThePrompt(query,email):
     try:
         info = getPromptinfo(query)
         id = info['_additional']["id"]
-        update_data = {
-            "public" : False,
-            "email" : info["email"],
-            "prompt" : info["prompt"],
-            "title" : info["title"],
-            "category" : info["category"],
-            "isPinned" : True
-        }  
-        client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
+
+        data = client.data_object.get(id)
+        current_data  =data["properties"]["isPinned"]["email"]
+        current_data.append(email)
+
+        updated_data = {
+            "isPinned" : {
+                "email" : current_data
+            }
+        }
+        client.data_object.update(uuid = id,data_object = updated_data,class_name=CLASS)
         doc_ref = db.collection("All_Prompt").document(id)
-        doc_ref.update({"isPinned" : True})
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.update({"Pinned_prompt": firestore.ArrayUnion([doc_ref])})
         return "Inserted into firestore"
@@ -337,17 +354,19 @@ def unpinThePrompt(query,email):
     try:
         info = getPromptinfo(query)
         id = info['_additional']["id"]
-        update_data = {
-            "public" : False,
-            "email" : info["email"],
-            "prompt" : info["prompt"],
-            "title" : info["title"],
-            "category" : info["category"],
-            "isPinned" : False
-        }  
-        client.data_object.replace(uuid = id,class_name=CLASS,data_object=update_data)
+        data = client.data_object.get(id)
+        current_data  =data["properties"]["isPinned"]["email"]
+
+        current_data.append(email)
+
+        updated_data = {
+            "isPinned" : {
+                "email" : current_data
+            }
+        }
+        client.data_object.update(uuid = id,data_object = updated_data,class_name=CLASS)
+
         doc_ref = db.collection("All_Prompt").document(id)
-        doc_ref.update({"isPinned" : False})
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.update({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
         return "Unpinned the prompt"
