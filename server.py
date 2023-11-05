@@ -347,7 +347,7 @@ def pinThePrompt(query,email):
         doc_ref = db.collection("All_Prompt").document(id)
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.update({"Pinned_prompt": firestore.ArrayUnion([doc_ref])})
-        return "Prompt Pinned"
+        return jsonify({"msg":"Prompt Pinned"})
     except Exception as e:
         errorMesage = "Unable to pin the prompt "
         return errorMesage,404
@@ -371,7 +371,7 @@ def unpinThePrompt(query,email):
         doc_ref = db.collection("All_Prompt").document(id)
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.set({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
-        return "Unpinned the prompt"
+        return jsonify({"msg":"UnPrompt Pinned"})
     except Exception as e:
         errorMesage = "Unable to unpin the prompt "
         return errorMesage,404
@@ -404,6 +404,8 @@ def displayPinned(email):
 
 def adduser(name,email):
     doc_ref = db.collection("users").document(email)
+    pinned_ref = db.collection("Pinned").document(email)
+    pinned_ref.set({"Pinned_prompt": firestore.ArrayUnion([])})
     doc = doc_ref.get()
     if doc.exists:
         doc_ref.update({"last_login" : firestore.SERVER_TIMESTAMP })
