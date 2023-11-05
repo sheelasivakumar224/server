@@ -347,7 +347,7 @@ def pinThePrompt(query,email):
         doc_ref = db.collection("All_Prompt").document(id)
         pinned_ref = db.collection("Pinned").document(email)
         pinned_ref.update({"Pinned_prompt": firestore.ArrayUnion([doc_ref])})
-        return jsonify({"msg":"Prompt Pinned"})
+        return "Prompt Pinned"
     except Exception as e:
         errorMesage = "Unable to pin the prompt "
         return errorMesage,404
@@ -370,8 +370,8 @@ def unpinThePrompt(query,email):
 
         doc_ref = db.collection("All_Prompt").document(id)
         pinned_ref = db.collection("Pinned").document(email)
-        pinned_ref.set({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
-        return jsonify({"msg":"UnPrompt Pinned"})
+        pinned_ref.update({"Pinned_prompt": firestore.ArrayRemove([doc_ref])})
+        return "Unpinned the prompt"
     except Exception as e:
         errorMesage = "Unable to unpin the prompt "
         return errorMesage,404
@@ -410,6 +410,7 @@ def adduser(name,email):
     if doc.exists:
         doc_ref.update({"last_login" : firestore.SERVER_TIMESTAMP })
         print("Updated Existing user")
+
     else:
         doc_ref.set({
             "username" : name,
@@ -505,8 +506,8 @@ def add():
             category = data["category"]
             email = payload["email"]
             print(title,prompt,category)
-            res = addToClass(email,prompt,title,category)
-            return res
+            addToClass(email,prompt,title,category)
+            return jsonify({'msg': 'prompt added'})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
         except jwt.DecodeError:
@@ -590,7 +591,8 @@ def pinPrompt():
             print(prompt)
             print(email)
             res = pinThePrompt(prompt,email)
-            return res
+            print(res)
+            return jsonify({"msg" : res})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
         except jwt.DecodeError:
@@ -609,7 +611,7 @@ def unpinPrompt():
             prompt = data["query"]
             email = payload["email"]
             res = unpinThePrompt(prompt,email)
-            return res
+            return jsonify({"msg" : res})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
         except jwt.DecodeError:
