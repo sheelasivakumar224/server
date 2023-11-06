@@ -404,13 +404,10 @@ def displayPinned(email):
 
 def adduser(name,email):
     doc_ref = db.collection("users").document(email)
-    pinned_ref = db.collection("Pinned").document(email)
-    pinned_ref.set({"Pinned_prompt": firestore.ArrayUnion([])})
     doc = doc_ref.get()
     if doc.exists:
         doc_ref.update({"last_login" : firestore.SERVER_TIMESTAMP })
         print("Updated Existing user")
-
     else:
         doc_ref.set({
             "username" : name,
@@ -432,12 +429,13 @@ def callback():
     try:
         data = request.get_json()
         url = data['code']
+        print(url)
         parsed_url = urlparse(url)
         query_parameters = parse_qs(parsed_url.query)
         code = query_parameters.get('code',[None])[0]
+        print(code)
         if code is None:
             return jsonify({'msg' : "Authorization code Missing"})
-        
         try:
             token = oauth.fetch_token(TOKEN_URL,code = code,client_secret=CLIENT_SECRET)
             print(token)
@@ -570,7 +568,7 @@ def update():
             Title = data["title"]
             Category = data["category"]
             res = updateMyprompt(originalText,editedText,Title,Category)
-            return res
+            return jsonify({"msg" : res})
         except jwt.ExpiredSignatureError:
             return jsonify({'error':'Token has expired'})
         except jwt.DecodeError:
