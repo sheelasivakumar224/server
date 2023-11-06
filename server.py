@@ -404,6 +404,7 @@ def displayPinned(email):
 
 def adduser(name,email):
     doc_ref = db.collection("users").document(email)
+    db.collection("Pinned").document(email)
     doc = doc_ref.get()
     if doc.exists:
         doc_ref.update({"last_login" : firestore.SERVER_TIMESTAMP })
