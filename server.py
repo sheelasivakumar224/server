@@ -440,6 +440,7 @@ def callback():
         
         try:
             token = oauth.fetch_token(TOKEN_URL,code = code,client_secret=CLIENT_SECRET)
+            print(token)
             if 'access_token' in token:
                 access_token = token['access_token']
                 expires_in = token['expires_in']
